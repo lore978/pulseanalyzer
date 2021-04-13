@@ -1,6 +1,22 @@
 
 extension CIImage {
     var averageColor: Int {
+        if !recording {
+            if medium1.count != 0{medium1.removeAll()}
+            mean10 = 0
+            if intervals.count != 0{intervals.removeAll()}
+                if mean11.count != 0{mean11.removeAll()}
+                    if mean21.count != 0{mean21.removeAll()}
+            informationstosave1 = 0
+            informationstosave2 = 0
+            if smedium1.count != 0{smedium1.removeAll()}
+            smean10 = 0
+                            if sintervals.count != 0{sintervals.removeAll()}
+                                if smean11.count != 0{smean11.removeAll()}
+                                    if smean21.count != 0{smean21.removeAll()}
+            informationstosave1 = 0
+            informationstosave2 = 0
+        }
         guard let filter = CIFilter(name: "CIAreaAverage", parameters: [kCIInputImageKey: self, kCIInputExtentKey: self.extent]) else { return 0 }
         guard let outputImage = filter.outputImage else { return 0 }
         var bitmap = [UInt8](repeating: 0, count: 4)
@@ -14,18 +30,17 @@ extension CIImage {
         rowdata.append(String(red))
         if red <= mean10 { if red < mean10 {medium1.append(Float(mean10-red)/interval)};intervals.append(interval);fase = true} else {
             if red + 50 < blue || red + 50 < green{medium1.removeAll();mean11.removeAll();mean21.removeAll();mean10 = red;return -1}
-            
             if intervals.count > minimumfperiod && !fase{
                     var incl : Float = 1
                     var prevalue : Float = 0
-                    var index = 0
+                    var index = 1
                     var valu : Float = 0
                     let adjf = (medium1.max() ?? 1)/(medium1.min() ?? 1)
                
                             for value in medium1 {if prevalue != 0 {incl = incl*value/(prevalue)/(pow(Float(2),Float(index)/2));index += 1}
                                 prevalue = value}
                     if medium1.count != 0 {
-                        if index > 0 {valu = ((incl/Float(medium1.count)))/adjf
+                        if index > 1 {valu = ((incl/Float(medium1.count)))/adjf
                             mean11.append(valu)} else {
                                 mean10 = red
                                 smean10 = red
@@ -50,22 +65,21 @@ extension CIImage {
         if red >= smean10 { if red > smean10 {smedium1.append(abs(Float(smean10-red)/interval))};sintervals.append(interval)} else {
             if red + 50 < blue || red + 50 < green{smedium1.removeAll();smean11.removeAll();smean21.removeAll();smean10 = red;return -1}
             print(intervals.count,"asc")
+           
             if fase && sintervals.count > minimumascendingperiod && smedium1.count > 0{
                     var incl : Float = 1
-                var contrincl : Float = 1
                     var prevalue : Float = 0
                     var index = 0
                     var valu : Float = 0
                     let sadjf = max(1,(smedium1.max() ?? 1))/max(1,(smedium1.min() ?? 1))
-                            for value in smedium1 {
-                                print(value,prevalue,incl)
-                                if prevalue != 0 {print(pow(Float(0.5), Float(1)/Float(index)/2),prevalue,value,incl,"hbuuh");
-                                    incl = incl*value/(prevalue)/pow(Float(0.5),Float(index));
-                                    contrincl = incl*prevalue/(value)/pow(Float(0.5),Float(index));
+                for ee in 0...smedium1.count - 1 {
+                    let eee = smedium1.count - 1 - ee
+                                if prevalue != 0 {
+                                    incl = incl*smedium1[eee]/(prevalue)/pow(Float(2),Float(eee));
                                     index += 1}
-                                prevalue = value}
+                                prevalue = smedium1[eee]}
                     if smedium1.count != 0 {
-                        if index > 0 {valu = (((incl/contrincl)/Float(smedium1.count)))/sadjf
+                        if index > 0 {valu = (((incl)/Float(smedium1.count)))/sadjf
                             
                             smean11.append(valu)} else {
                                 mean10 = red
