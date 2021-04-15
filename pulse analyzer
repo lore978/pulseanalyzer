@@ -40,7 +40,7 @@ extension CIImage {
                             for value in medium1 {if prevalue != 0 {incl = incl*value/(prevalue)/(pow(Float(2),Float(index)/2));index += 1}
                                 prevalue = value}
                     if medium1.count != 0 {
-                        if index > 1 {valu = ((incl/Float(medium1.count)))/adjf
+                        if index > 1 {valu = (((incl/Float(medium1.count)))/adjf)/pow(medium1.count,2)
                             mean11.append(valu)} else {
                                 mean10 = red
                                 smean10 = red
@@ -79,7 +79,7 @@ extension CIImage {
                                     index += 1}
                                 prevalue = smedium1[eee]}
                     if smedium1.count != 0 {
-                        if index > 0 {valu = (((incl)/Float(smedium1.count)))/sadjf
+                        if index > 0 {valu = ((((incl)/Float(smedium1.count)))/sadjf)//pow(smedium1.count,2)
                             
                             smean11.append(valu)} else {
                                 mean10 = red
