@@ -1,3 +1,4 @@
+// Valsava manovre to observe changes, you can see Abdominalwall on AppleStore
 extension CIImage {
     var averageColor: Int {
         guard let filter = CIFilter(name: "CIAreaAverage", parameters: [kCIInputImageKey: self, kCIInputExtentKey: self.extent]) else { return 0 }
