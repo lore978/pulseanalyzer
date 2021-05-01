@@ -1,3 +1,4 @@
+// A more precise solution could be summing values pixel per pixel
 // Valsava manovre to observe changes, you can see Abdominalwall on AppleStore
 extension CIImage {
     var averageColor: Int {
