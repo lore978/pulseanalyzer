@@ -1,0 +1,824 @@
+//
+//  ViewController.swift
+//  capillaryflow
+//
+//  Created by Lorenzo Giannantonio on 13/04/2021.
+//
+
+
+
+import UIKit
+import CoreImage
+import AVFoundation
+import CoreHaptics
+import ImageIO
+import Foundation
+var arrayofarrays = [[CGFloat]]()
+var inhibittimer = false
+var lastindex = 0
+var indexes = [Int]()
+var mediumred = 0
+var player : CHHapticAdvancedPatternPlayer?
+var engine: CHHapticEngine!
+var vibrating : Bool = false
+var contintensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0)
+var contsharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.5)
+var standardadjf = Float(1)
+var string = ""
+var battiti = 0
+var secondi = 0
+var recording = false
+var meaninterval = Float(0);
+let rect = CGRect(x: 0, y: 0, width: 300, height: 300)
+var imageui : UIImage?
+var lastimage : CIImage? = nil
+var previouslastimage : CIImage? = nil
+var haptic = false
+var accessibility = UIAccessibilityTraits.init()
+var timer : Timer!
+var captureSession = AVCaptureSession()
+var stringtoshow = ""
+var stringtoshow2 = ""
+var precalc = Double(0)
+var redvalues = [Float]()
+var lastmeantime = Double(0)
+var intervatocalcmean = 0
+var preferredred = Float(0) ;var preferredgreen = Float(0);var preferredblue = Float(0);
+var ascending1 = false
+var ascending2 = false
+var descending1 = true
+var descending2 = false
+var differences = [Float]()
+var signalfree = true
+var intervals = [Float]()
+var redup = true
+var greenup = true
+var bluup = true
+var lasttime = Double(0)
+var stepred = 0
+var stepgreen = 0
+var stepblue = 0
+var stepdred = 0
+var stepdgreen = 0
+var stedpblue = 0
+var previousindexcolor = 0
+var lastvalue = 0
+var average = 0
+var filterimage : CIImage?
+var analyzing = false
+var lastpulsevalid = true
+var removenext = true
+var removenext2 = false
+var removenext3 = false
+var listofarythmiavalues = [Float]()
+var onthebackcamera = "place your finger on the rear camera and wait"
+var lesspressure = "permetti alla luce del flash di illuminare il tuo dito"
+var morepressure = "copri maggiormente la fotocamera"
+var analyzingstring = "analisi in corso"
+var informationtext = ""
+var informationaccepted = false
+var allscrolled = false
+var intervalsconsecutive = [Bool]()
+var nextconsecutive = false
+var minimumfperiod = 10
+var minimumascendingperiod = 3
+let text3 = UILabel()
+var usercode = ""
+var informationstosave1 = Float(1)
+var informationstosave2 = 0
+var informationstosave3 = 0
+var datatosave = [Any]()
+var smean10 = 0
+var sintervals = [Float]()
+var smedium1 = [Float]()
+var sadjf = Float(1)
+var sstandardadjf = Float(1)
+var smean21 = [Float]()
+var sinformationstosave1 = Float(0)
+var sinformationstosave2 = 0
+var smean11 = [Float]()
+var longmediumcampione = 10
+var rowdata = [String]()
+var identifier = ""
+class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, UIScrollViewDelegate, UITextViewDelegate {
+    var restartingengine = false
+    var cuore = UIImageView()
+    var sfondo = UIImageView()
+    var text = UITextView()
+    var arrayofvalue = [pulsevalues]()
+    var text2 = UILabel()
+    let tapview = UIView()
+    var currentCamera: AVCaptureDevice?
+    var backCamera: AVCaptureDevice?
+    var Imageview = UIImageView()
+    let videoDataOutput = AVCaptureVideoDataOutput()
+    var previewLayer:CALayer!
+    var captureDevice:AVCaptureDevice!
+    func getLanguageISO() -> String {
+      let locale = String(Locale.preferredLanguages[0].prefix(2))
+      return locale
+    }
+
+    @objc func timertapp(){
+        DispatchQueue.main.async {if engine == nil && !self.restartingengine{self.restartingengine = true;
+            self.createAndStartHapticEngine()}}
+        if arrayofarrays.count == 0 {return} else {while arrayofarrays.count  > 4 {arrayofarrays.removeFirst()}}
+        crbezier(lenght: 0, shape: [0],generate: true)
+    }
+    override func viewDidLoad() {
+        self.view.backgroundColor = .black
+        changestrings()
+        Imageview.frame = self.view.frame
+        self.view.addSubview(Imageview)
+      // scene = SKView(frame: self.view.frame)
+      //  self.view.addSubview(scene!)
+        //cuore.image = UIImage(named: "cuore.png")
+        //cuore.frame = CGRect(x: self.view.bounds.midX - self.view.bounds.width/5, y: self.view.bounds.midY - self.view.bounds.width/5, width: self.view.bounds.width*0.4, height: self.view.bounds.width*0.4)
+        //sfondo.frame = self.view.frame//CGRect(x: self.view.bounds.midX - self.view.bounds.width*0.4, y: self.view.bounds.midY - self.view.bounds.width*0.4, width: self.view.bounds.width*0.8, height: self.view.bounds.width*0.8)
+        text.frame = CGRect(x: self.view.bounds.minX, y: self.view.bounds.maxY * 0.07, width: self.view.bounds.width, height: self.view.bounds.height*0.2)
+        text.keyboardType = .phonePad
+        text.backgroundColor = .yellow
+       // text.text = "aa-position"
+        text.font = UIFont(name: "Futura-CondensedExtraBold", size: view.frame.width / 14)
+        text2.frame = CGRect(x: self.view.bounds.width*0.2, y: self.view.bounds.maxY * 0.2, width: self.view.bounds.width*0.6, height: self.view.bounds.height*0.2)
+        text2.numberOfLines = 3
+       // if !informationreaded() {self.createinformation()} else {self.createinformation();
+            startanalyzing()
+        
+        starttimer()
+            
+       // }
+    }
+    
+    func scrollToEnd(_ someTextView:UITextView) {
+        let bottom = NSMakeRange(someTextView.text.lengthOfBytes(using: .utf8)-1, 1)
+        someTextView.scrollRangeToVisible(bottom)
+    }
+    
+    func vibrate(luminosity : Float,sha: Float){
+        switch vibrating {
+        case true:
+            let intensityvar = Float(luminosity)
+            let sharpnessvar = sha
+            
+            let intensityParameter = CHHapticDynamicParameter(parameterID: .hapticIntensityControl,
+                                                              value: intensityvar,
+                                                              relativeTime: 0)
+            
+            let sharpnessParameter = CHHapticDynamicParameter(parameterID: .hapticSharpnessControl,
+                                                              value: sharpnessvar,
+                                                              relativeTime: 0)
+            
+            do {
+                try player?.sendParameters([intensityParameter, sharpnessParameter],
+                                                    atTime: 0)
+                print("c",luminosity,sha)
+            } catch let error {
+                print("Dynamic Parameter Error: \(error)")
+            };
+            
+        default:
+            contintensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1)
+            contsharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: sha)
+
+        do {
+            let event = CHHapticEvent(eventType: .hapticContinuous, parameters: [contintensity, contsharpness], relativeTime:0, duration: 10000)
+            let pattern = try CHHapticPattern(events: [event], parameters: [])
+            player = try engine?.makeAdvancedPlayer(with: pattern)
+            if !inhibittimer {   try player?.start(atTime: 0);print("s",luminosity,sha)}
+            vibrating = true;
+                    
+            } catch {
+            print("Failed to play pattern: \(error.localizedDescription).")
+            }
+    }
+    }
+    
+    func createAndStartHapticEngine() -> Bool {
+        
+        do {engine = try CHHapticEngine();engine.playsHapticsOnly = true} catch let error {fatalError("Engine Creation Error: \(error)");return false}
+        do {try engine.start(completionHandler: { (_) -> Void in
+            self.restartingengine = false
+           
+        })
+        
+            return true;
+        } catch {print("Failed to start the engine: \(error)");return false}
+    }
+    
+    func stopengine() {
+        engine?.stop(completionHandler: { (_) -> Void in
+            self.restartingengine = false
+           
+        })
+        engine = nil
+        vibrating = false
+    }
+    
+    
+    func crbezier(lenght : Int,shape: [Float],generate: Bool) -> UIBezierPath {
+        let bezier = UIBezierPath()
+        let mintonormalize = shape.min()!
+        let maxtonormalize = shape.max()!
+        
+        let res = Int(self.view.frame.width)
+        //bezier.move(to: CGPoint(x: CGFloat(sin(0)*Float((res/2))), y: CGFloat(cos(0)*Float((res/2)))))
+        let ratio = Float(res)/Float(shape.count)
+        let passo = 2*Float.pi/Float(res)
+        var prova = Float(0)
+        if !generate{let difference = CGFloat(maxtonormalize - mintonormalize)*2
+        var values = [CGFloat]()
+        for i in 0...res - 1 {
+            let index = max(1,Int(Float(i)/ratio))
+            values.append(0.5 + (CGFloat(shape[index-1] - mintonormalize)/difference))}
+        var valuessweet = [CGFloat]()
+        var arraytomedia = [CGFloat]()
+        let lenghtofqmedia = 20
+        for o in 0...lenghtofqmedia - 1 {arraytomedia.append(values[(values.count - 1) - (lenghtofqmedia - o)])}
+        for i in 0...values.count - 1 {
+            arraytomedia.append(values[i])
+            var mediaq = CGFloat(1)
+            var count = 0
+            for e in max(0,arraytomedia.count - lenghtofqmedia)...max(0,arraytomedia.count - 1) {mediaq = mediaq*arraytomedia[e];count += 1}
+            valuessweet.append(pow(mediaq,1/CGFloat(count)))
+        }
+       arrayofarrays.append(valuessweet);return bezier}
+       let valuessweet = createmediaofarrays()
+        UIView.animate(withDuration: 1.5,
+                     delay: 0,
+                     options: [],
+                     animations: {
+                        self.text2.alpha = 0
+        })
+        
+        for i in 0...res {
+            if i < res {
+            let corr = valuessweet[i]
+            let x = CGFloat(-sin(prova)*Float((res/2)))*corr
+            let y = -CGFloat(cos(prova)*Float((res/2)))*corr
+            let point = CGPoint(x: x, y: y)
+            if i == 1 {bezier.move(to: point)}
+            prova += passo
+            if i > 1 && i != res{bezier.addLine(to: point)}
+            } else
+            {let xf = CGFloat(-sin(prova)*Float((res/2)))*valuessweet[0]
+                let yf = -CGFloat(cos(prova)*Float((res/2)))*valuessweet[0]
+                let pointf = CGPoint(x: xf, y: yf)
+                bezier.addLine(to: pointf)}
+        }
+        
+        bezier.lineWidth = 10
+        let image:UIImage = UIImage.shapeImageWithBezierPath(bezierPath: bezier, fillColor: .clear, strokeColor: .green,strokeWidth:10)
+        //let ciimage = image.ciImage
+        //let comicEffect = CIFilter(name: "CIGaussianBlur") // CIPhotoEffectChrome
+       // comicEffect!.setDefaults()
+        //comicEffect!.setValue(ciimage, forKey: kCIInputImageKey)
+       // comicEffect!.setValue(20, forKey: "inputRadius")
+       // let image1 = comicEffect!.outputImage
+        Imageview.contentMode = .center
+        Imageview.image = applyeffect(yourUIImage: image)
+       // UIColor.red.setStroke()
+      //  bezier.stroke()
+        //crmovement(shape: bezier, duration: 1)
+        return bezier
+    }
+    
+    func createmediaofarrays() -> [CGFloat] {
+        var appendingarray = [CGFloat]()
+        var count = 0
+        for array in arrayofarrays {
+            for i in 0...array.count - 1 {
+                if appendingarray.count < array.count {appendingarray.append(array[i])} else {appendingarray[i] += array[i]}
+            }
+            count += 1
+        }
+        for i in 0...appendingarray.count - 1 {
+            appendingarray[i] = appendingarray[i]/CGFloat(count)
+        }
+        return appendingarray
+    }
+    
+    func applyeffect(yourUIImage: UIImage) -> UIImage {
+        guard let currentCGImage = yourUIImage.cgImage else { return yourUIImage}
+        let currentCIImage = CIImage(cgImage: currentCGImage)
+
+        let filter = CIFilter(name: "CIGaussianBlur")
+        filter?.setValue(currentCIImage, forKey: kCIInputImageKey)
+        filter?.setValue(12, forKey: "inputRadius")
+        guard let outputImage = filter?.outputImage else { return yourUIImage}
+
+        let context = CIContext()
+        var processedImage = yourUIImage
+        if let cgimg = context.createCGImage(outputImage, from: outputImage.extent) {
+           processedImage = UIImage(cgImage: cgimg)
+            print(processedImage.size)
+            
+        }
+        return processedImage
+    }
+    
+
+    
+    func startanalyzing() {
+        text2.text = onthebackcamera
+        text.backgroundColor = .clear
+        text2.backgroundColor = .clear
+        self.view.addSubview(sfondo)
+        //self.view.addSubview(cuore)
+        self.view.addSubview(text)
+        self.view.addSubview(text2)
+        //self.text.textAlignment = .left
+        //self.text.textColor = UIColor(displayP3Red: 0.0, green: 0.5, blue: 0.0, alpha: 1)
+        self.text.font = UIFont(name: "Futura-CondensedExtraBold", size: view.frame.width / 14)
+        self.text.isUserInteractionEnabled = true
+        self.text2.textAlignment = .center
+        self.text2.textColor = UIColor(displayP3Red: 0.0, green: 0.5, blue: 0.0, alpha: 1)
+        self.text2.font = UIFont(name: "Futura-CondensedExtraBold", size: view.frame.width / 16)
+        self.text2.isUserInteractionEnabled = true
+        //currentCamera?.setmaxframe()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {do {try self.currentCamera?.lockForConfiguration();
+            if self.currentCamera?.hasTorch ?? false  {if self.currentCamera?.isTorchModeSupported(.on) == true {self.currentCamera?.torchMode = .on}}
+            if self.currentCamera?.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) == true { self.currentCamera?.whiteBalanceMode = .continuousAutoWhiteBalance}
+            if self.currentCamera?.isExposureModeSupported(.continuousAutoExposure) == true {self.currentCamera?.exposureMode = .continuousAutoExposure}
+            if self.currentCamera?.isFocusModeSupported(.continuousAutoFocus) == true {self.currentCamera?.focusMode = .continuousAutoFocus}
+            //if ((currentCamera?.isLowLightBoostSupported) != nil) {  currentCamera?.automaticallyEnablesLowLightBoostWhenAvailable = true}
+            
+        } catch {print("no lock of camera available")}}
+       // medium1.append(0);
+       // medium1.append(0);
+       // medium1.append(0);
+       // medium2.append(0);
+       // medium2.append(0);
+       // medium2.append(0);
+       // medium3.append(0);
+      //  medium3.append(0);
+      //  medium3.append(0);
+      //  differences.append(0);
+      //  differences.append(0);
+      //  differences.append(0);
+      //  intervals.append(0);
+        captureSession.startRunning()
+        
+    }
+    
+    func starttimer(){
+        if timer == nil {timer = Timer.scheduledTimer(timeInterval: TimeInterval(3), target: self, selector: #selector(timertapp), userInfo: nil, repeats: true)}
+    }
+    
+    func restoretorch() {
+        DispatchQueue.main.async{do {try self.currentCamera?.lockForConfiguration();
+            if self.currentCamera?.hasTorch ?? false  {if self.currentCamera?.isTorchModeSupported(.on) == true {self.currentCamera?.torchMode = .on}}
+            if self.currentCamera?.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) == true { self.currentCamera?.whiteBalanceMode = .continuousAutoWhiteBalance}
+            if self.currentCamera?.isExposureModeSupported(.continuousAutoExposure) == true {self.currentCamera?.exposureMode = .continuousAutoExposure}
+            if self.currentCamera?.isFocusModeSupported(.continuousAutoFocus) == true {self.currentCamera?.focusMode = .continuousAutoFocus}
+            //if ((currentCamera?.isLowLightBoostSupported) != nil) {  currentCamera?.automaticallyEnablesLowLightBoostWhenAvailable = true}
+            
+        } catch {print("no lock of camera available")}}
+    }
+
+   
+    
+    
+
+    
+    
+    func alertnopermissiontocamera() {
+        let code = getLanguageISO()
+        switch code {
+       /* case "ar":
+            showAlerttoclose(texttoshow: "سيقومسيقوم التطبيق بالتسجيل على بيانات جهازك المستخرجة من الصور للمقارنة والعثور على أكثرها تشابهًا. لن يتم مشاركة البيانات بأي شكل من الأشكال. قبوللا يمكن للتطبيق تحليل البيئة إذا لم تمنح الإذن للوصول إلى الكاميرا.",acceptstring: "")
+        case "fi":
+            showAlerttoclose(texttoshow: "Sovellus ei voi analysoida ympäristöä, jos et anna lupaa käyttää kameraa.",acceptstring: "")
+        case "fr":
+            showAlerttoclose(texttoshow: "L'application ne peut pas analyser l'environnement si vous ne donnez pas la permission d'accéder à la caméra.",acceptstring: "")
+        case "ja":
+            showAlerttoclose(texttoshow: "カメラへのアクセスを許可しないと、アプリは環境を分析できません。",acceptstring: "")*/
+        case "it":
+            showAlerttoclose(texttoshow: "l'app non può analizzare la pressione venosa se non si autorizza l'accesso alla fotocamera.",acceptstring: "")/*
+        case "pt":
+            showAlerttoclose(texttoshow: "O aplicativo não pode analisar o ambiente se você não der permissão para acessar a câmera.",acceptstring: "")
+        case "es":
+            showAlerttoclose(texttoshow: "La aplicación no puede analizar el entorno si no da permiso para acceder a la cámara.",acceptstring: "")
+        case "sv":
+            showAlerttoclose(texttoshow: "Appen kan inte analysera miljön om du inte ger behörighet att komma åt kameran.",acceptstring: "")
+        case "de":
+            showAlerttoclose(texttoshow: "Die App kann die Umgebung nicht analysieren, wenn Sie keine Berechtigung zum Zugriff auf die Kamera erteilen.",acceptstring: "")
+        case "ca":
+            showAlerttoclose(texttoshow: "L'aplicació no pot analitzar l'entorn si no doneu permís per accedir a la càmera.",acceptstring: "")
+        case "cs":
+            showAlerttoclose(texttoshow: "Pokud neudělíte přístup k fotoaparátu, aplikace nemůže analyzovat prostředí.",acceptstring: "")
+        case "zh":
+            showAlerttoclose(texttoshow: "如果您未授予访问相机的权限，则该应用无法分析环境。",acceptstring: "")
+        case "ko":
+            showAlerttoclose(texttoshow: "카메라에 대한 접근 권한을 부여하지 않으면 앱에서 환경을 분석 할 수 없습니다.",acceptstring: "")
+        case "hr":
+            showAlerttoclose(texttoshow: "Aplikacija ne može analizirati okruženje ako ne date dopuštenje za pristup kameri.",acceptstring: "")
+        case "da":
+            showAlerttoclose(texttoshow: "Appen kan ikke analysere miljøet, hvis du ikke giver tilladelse til at få adgang til kameraet.",acceptstring: "")
+        case "he":
+            showAlerttoclose(texttoshow: "האפליקציה לא יכולה לנתח את הסביבה אם אינך נותן הרשאה לגשת למצלמה.",acceptstring: "")
+        case "el":
+            showAlerttoclose(texttoshow: "Η εφαρμογή δεν μπορεί να αναλύσει το περιβάλλον εάν δεν επιτρέψετε την πρόσβαση στην κάμερα.",acceptstring: "")
+        case "hi":
+            showAlerttoclose(texttoshow: "यदि आप कैमरा एक्सेस करने की अनुमति नहीं देते हैं तो ऐप पर्यावरण का विश्लेषण नहीं कर सकता है।",acceptstring: "")
+        case "id":
+            showAlerttoclose(texttoshow: "Aplikasi tidak dapat menganalisis lingkungan jika Anda tidak memberikan izin untuk mengakses kamera.",acceptstring: "")
+        case "ms":
+            showAlerttoclose(texttoshow: "Aplikasi tidak dapat menganalisis persekitaran jika anda tidak memberikan kebenaran untuk mengakses kamera.",acceptstring: "")
+        case "no":
+            showAlerttoclose(texttoshow: "Appen kan ikke analysere miljøet hvis du ikke gir tilgang til kameraet.",acceptstring: "")
+        case "nl":
+            showAlerttoclose(texttoshow: "De app kan de omgeving niet analyseren als je geen toestemming geeft voor toegang tot de camera.",acceptstring: "")
+        case "pl":
+            showAlerttoclose(texttoshow: "Aplikacja nie może analizować środowiska, jeśli nie zezwolisz na dostęp do kamery.",acceptstring: "")
+        case "ro":
+            showAlerttoclose(texttoshow: "Aplicația nu poate analiza mediul dacă nu acordați permisiunea de a accesa camera.",acceptstring: "")
+        case "ru":
+            showAlerttoclose(texttoshow: "Приложение не сможет анализировать окружающую среду, если вы не дадите разрешение на доступ к камере.",acceptstring: "")
+        case "sk":
+            showAlerttoclose(texttoshow: "Ak neposkytnete povolenie na prístup k fotoaparátu, aplikácia nemôže analyzovať prostredie.",acceptstring: "")
+        case "th":
+            showAlerttoclose(texttoshow: "แอปไม่สามารถวิเคราะห์สภาพแวดล้อมได้หากคุณไม่อนุญาตให้เข้าถึงกล้อง",acceptstring: "")
+        case "tr","tk":
+            showAlerttoclose(texttoshow: "Kameraya erişim izni vermezseniz uygulama ortamı analiz edemez.",acceptstring: "")
+        case "uk":
+            showAlerttoclose(texttoshow: "Додаток не може аналізувати середовище, якщо ви не даєте дозволу на доступ до камери.",acceptstring: "")
+        case "hu":
+            showAlerttoclose(texttoshow: "Az alkalmazás nem tudja elemezni a környezetet, ha nem engedélyezi a kamera elérését.",acceptstring: "")
+        case "vi":
+            showAlerttoclose(texttoshow: "Ứng dụng không thể phân tích môi trường nếu bạn không cấp quyền truy cập vào máy ảnh.",acceptstring: "")*/
+        default:
+            showAlerttoclose(texttoshow: "the app can't analyze the rhythm if you do not give permission to access the camera.",acceptstring: "")
+        }
+        return
+        
+    }
+    
+    func changestrings() {
+        let code = getLanguageISO()
+        switch code {
+        case "ar":
+           onthebackcamera = ""
+           lesspressure = ""
+           morepressure = ""
+        //arabo
+        case "fi":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//finlandese
+        case "fr":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//framcese
+        case "ja":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//giapponese*/
+        case "it":
+            onthebackcamera = "poggia il tuo dito sulla fotocamera posteriore e attendi"
+            lesspressure = "permetti alla luce del flash di illuminare il tuo dito"
+            morepressure = "copri maggiormente la fotocamera"//italiano
+            analyzingstring = "analisi in corso"
+            informationtext = "Leggi fino in fondo per avviare RhythmAnalyzer.\n\nIl battito cardiaco è normalmente ritmico cioè con pause tra i battiti di quasi uguale durata o fisiologicamente aritmico nelle persone giovani (pause tra i battiti che aumentano durante l’espirazione e si riducono durante l’inspirazione respiratoria).\n\nA volte ci possono essere dei battiti in più o in meno su un ritmo per il resto normale e sono causati da extrasistoli che possono indicare una malattia o essere benigne e quindi senza una malattia sottostante.\n\nEsiste anche una malattia che necessita di terapia medica continua chiamata fibrillazione atriale, nella quale le pause tra i battiti sono tutte diverse.\n\nRhythmAnalyzer ha lo scopo di rilevare le pause tra i battiti e assegnare un valore alla loro aritmicità.\n\nPer fare questo ha la necessità di eliminare il più possibile dall’analisi gli artefatti (segnali interpretati come battiti ma che non lo sono) e quindi ha bisogno di alcuni secondi in più per l’analisi rispetto ad altre app che rilevano la frequenza cardiaca, oltre che un posizionamento del dito stabile e ottimale.\n\nLa posizione ottimale è questa: adagia il tuo dispositivo con la fotocamera posteriore rivolta verso l’alto e poggia il dito, con una leggera pressione, sulla fotocamera e sul flash, se hai un dispositivo con fotocamera multipla poggia più dita fino a coprire tutte le fotocamere.\n\nSe non senti segnali acustici significa che hai posizionato bene il dito e dopo alcuni secondi il tuo dispositivo inizierà a vibrare quanto percepisce un battito o emetterà un segnale aptico in caso di battito dubbio. Sono necessarie almeno venti vibrazioni (vengono calcolate solo quelle in cui ci sono almeno quattro segnali validi consecutivi), puoi leggere sul display gli intervalli in secondi e gli asterischi ad indicare battiti inseriti in intervalli aritmici e fai shake per copiare la lista degli intervalli.\n\nIn presenza di asterischi ti invitiamo a consultare un medico.\n\nRhythmAnalyzer ha lo scopo di rilevare aritmie silenti, cioè non associate a sintomi o malattie diagnosticate o sospette, quindi in presenza di qualsiasi dubbio di malattia non affidarti a RhythmAnalyzer e consulta un medico.\n\nFai doppio tap qui sotto per avviare l'applicazione."
+        case "pt":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//portoghese
+        case "es":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//spagnolo
+        case "sv":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//svedese
+        case "de":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//tedesco
+        case "ca":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//catalano
+        case "cs":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//ceco
+        case "zh":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//cinese
+        case "ko":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//coreano
+        case "hr":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//croato
+        case "da":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//danese
+        case "he":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//ebraico
+        case "el":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//greco
+        case "hi":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//hindi
+        case "id":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//indonesiano
+        case "ms":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//malese
+        case "no":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//norvegese
+        case "nl":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//olandese
+        case "pl":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//polacco
+        case "ro":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//rumeno
+        case "ru":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//russo
+        case "sk":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//slovacco
+        case "th":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//thailandese
+        case "tr","tk":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//turco
+        case "uk":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//ucraino
+        case "hu":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//ungherese
+        case "vi":
+            onthebackcamera = ""
+            lesspressure = ""
+            morepressure = ""//vietnamita*/
+        default:
+            onthebackcamera = "place your finger on the rear camera and wait"
+            lesspressure = "allow the flash light to illuminate your finger"
+            morepressure = "cover more the camera with your finger"
+            analyzingstring = "analyzing"//inglese
+            informationtext = "Read all text below to use RhythmAnalyzer\n\nThe heartbeat is normally rhythmic that means duration pauses between beats are almost equal or physiologically arrhythmic in young people (pauses between beats increase during exhalation and decrease during inhalation).\n\nSometimes there may be more or less beats on an otherwise normal rhythm and are caused by extrasystoles that may indicate disease or be benign and therefore without an underlying disease.\n\nIt also exists a disease that requires ongoing medical therapy called atrial fibrillation, in which the pauses between beats are all different.\n\nRhythmAnalyzer has the purpose of detecting the pauses between beats and assigning a value to their arrhythmicity.\n\nTo do this it needs to eliminate as much as possible from the analyzes artifacts (signals interpreted as beats but which are not) and therefore needs a few more seconds for analysis than other apps that detect heart rate, as well as a optimal and stable finger positioning.\n\nThe optimal position is this: lay your device with the rear camera facing upwards and place your finger, with a light pressure, on the camera and flash; if you have a device with multiple camera use several fingers until all cameras are covered.\n\nIf you do not hear beeps it means that you have positioned your finger correctly and after a few seconds your device will start vibrating when it perceives a beat or emits a haptic signal in case of a beat doubt. A minimum of at least twenty vibrations are needed to describe your rhythm (only those in which there are at least four consecutive valid signals are calculated), you can find on the display the intervals in seconds and asterisks to indicate beats entered in arrhythmic intervals and shake your device to copy the list of intervals.\n\nIn the presence of asterisks please consult a doctor.\n\nRhythmAnalyzer is intended to detect silent arrhythmias, that is, not associated with symptoms or diagnosed or suspected diseases, so in the presence of any doubt of disease do not rely on RhythmAnalyzer and consult a doctor.\n\nDouble tap below to start the application."
+        }
+        return
+        
+    }
+
+    
+    override func viewWillAppear(_ animated: Bool) {
+        
+        if AVCaptureDevice.authorizationStatus(for: AVMediaType.video) != .authorized
+        {AVCaptureDevice.requestAccess(for: AVMediaType.video, completionHandler:
+            { (authorized) in
+                DispatchQueue.main.async
+                {
+                    if authorized
+                    {  self.setupDevice()
+                        UIView.animate(withDuration: 0.2,
+                                     delay: 0,
+                                     options: [],
+                                     animations: {
+                                        self.Imageview.alpha = 1
+                        })
+                        
+                    } else {self.alertnopermissiontocamera()}
+                }
+            })
+        } else {
+            DispatchQueue.main.async
+            {
+            self.setupDevice()
+            UIView.animate(withDuration: 0.2,
+                         delay: 0,
+                         options: [],
+                         animations: {
+                            self.Imageview.alpha = 1
+            })
+            }}
+    }
+    
+    func tryhaptic() -> Bool {
+      guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return false}
+     return true }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        recording = true
+        text.resignFirstResponder()
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        recording = false
+
+    }
+    
+    func showAlert(texttoshow: String, acceptstring: String) {
+        let alertController = UIAlertController(title: "!", message:
+            texttoshow, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: acceptstring, style: .default))
+        self.present(alertController, animated: true, completion: nil)
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.warning);
+    }
+    func showAlerttoclose(texttoshow: String, acceptstring: String) {
+        let alertController = UIAlertController(title: "", message:
+            texttoshow, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: acceptstring, style: .default))
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
+    
+ 
+ 
+
+    
+    func setupDevice() {
+        let deviceDiscoverySession = AVCaptureDevice.DiscoverySession(deviceTypes: [
+            .builtInWideAngleCamera,
+            .builtInUltraWideCamera,
+            .builtInTelephotoCamera
+        ], mediaType: AVMediaType.video, position: AVCaptureDevice.Position.back)
+        let devices = deviceDiscoverySession.devices
+        for device in devices {if device.position == .back && backCamera == nil {backCamera = device} }
+        currentCamera = backCamera
+        setupInputOutput()
+    }
+    
+    func setupInputOutput() {
+        captureSession.sessionPreset = AVCaptureSession.Preset.vga640x480;
+        do {let captureDeviceInput = try AVCaptureDeviceInput(device: currentCamera!)
+            if captureSession.canAddInput(captureDeviceInput) {
+                captureSession.addInput(captureDeviceInput);}
+            let videoOutput = AVCaptureVideoDataOutput()
+            videoOutput.alwaysDiscardsLateVideoFrames = true
+            videoOutput.setSampleBufferDelegate(self, queue: .main)
+            if captureSession.canAddOutput(videoOutput) {captureSession.addOutput(videoOutput)}
+            currentCamera?.unlockForConfiguration();
+            //startanalyzing()
+            print("startinganalyzing")
+            } catch {print(error)}
+    }
+    
+    
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        connection.videoOrientation = .portrait
+        if let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) {
+            if !currentCamera!.isTorchActive {restoretorch()}
+            let value = pixelBuffer.clampforcolor()
+            let time = Double(NSDate().timeIntervalSinceReferenceDate)
+            let newvalue = pulsevalues(value: value, interval: time - lastmeantime)
+            if newvalue.interval < 100{ arrayofvalue.append(newvalue);redvalues.append(Float(value - lastvalue)/Float(time - lastmeantime));indexes.append(redvalues.count - 1);
+                }
+            lastmeantime = time
+            
+            lastvalue = value
+            let media = reducearrayandgivemean(maxinterval: 0.4, midinterval: 0.3, mininterval: 0.2)
+            if media[1] != 0 {
+                let value = max(0,min(2,pow(media[2]/media[0] + 1,5)-31))/2
+                var svalue = Float(0)
+                if redvalues.count > 1 {svalue = max(0,min(1,pow(redvalues[redvalues.count - 2]/redvalues.last! + 1,1)-1))}
+                if engine != nil {vibrate(luminosity: max(0.01,value), sha: svalue)}
+                if media[0] < media[1] && descending1 {ascending1 = true;descending2=false;descending1=false}
+                if ascending1 && media[1] < media[2] {ascending2 = true}
+                if ascending2 && media[1] > media[2] {ascending2 = false; ascending1 = false;descending1 = true;
+                    var arraydiapp = [Float]()
+                    for i in lastindex...redvalues.count - 1 {arraydiapp.append(redvalues[i])}
+                    var arrayadjdiapp = [Float]()
+                    
+                    let ind = arraydiapp.firstIndex(of: arraydiapp.min()!)
+                    for i in 0...arraydiapp.count - 1 {
+                        var index = ind! - i
+                        if index < 0 {index += arraydiapp.count}
+                        arrayadjdiapp.append(arraydiapp[index])}
+                    
+                  //  if arraydiapp.count > 10 && arraydiapp.count < 50 {
+                        crbezier(lenght: 1, shape: arrayadjdiapp, generate: false)
+                        
+                  //  }
+                    lastindex = indexes.last!
+                    
+                }
+                if descending1 && media[0] > media[1] {descending2 = true}
+                
+            }
+
+            return
+   }}
+    
+    func reducearrayandgivemean(maxinterval: Double,midinterval: Double,mininterval: Double) -> [Float]{
+        var valuestosave = 0
+        var valuessum = Float(0)
+        var returningmid = Float(0)
+        var returningmin = Float(0)
+        var sumoftimes = Double(0)
+        let arrcount = arrayofvalue.count
+        if arrcount != 0 {
+        for i in 0...arrcount - 1 {
+            sumoftimes += arrayofvalue[arrcount-i-1].interval
+            valuessum += Float(arrayofvalue[arrcount-i-1].value)
+            if sumoftimes > mininterval && returningmin == 0{returningmin = valuessum/Float(i+1)}
+            if sumoftimes > midinterval && returningmid == 0{returningmid = valuessum/Float(i+1)}
+            if sumoftimes > maxinterval {valuestosave = i;arrayofvalue.removeFirst(arrcount - valuestosave);return [valuessum/Float(i+1),returningmid,returningmin]}
+        }
+        
+        }
+        return [0,0]
+    }
+    
+    func alert(type: Int, color: Int) {
+       
+    }
+
+    struct pulsevalues{
+        var value = 0
+        var interval = Double(0)
+    }
+    
+    func analyze() {
+    }
+    
+    override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?){
+        if motion == .motionShake {
+            //UIPasteboard.general.string = text
+        }
+        }
+}
+
+extension CVPixelBuffer {
+    func clampforcolor() -> Int{
+        let width = CVPixelBufferGetWidth(self)//240
+        let height = CVPixelBufferGetHeight(self)//320
+        CVPixelBufferLockBaseAddress(self, CVPixelBufferLockFlags(rawValue: 0))
+        let baseAddress = CVPixelBufferGetBaseAddress(self)!
+         let byteBuffer = baseAddress.assumingMemoryBound(to: UInt8.self)
+
+        var gap = Int(0)
+        for y in stride(from: 0, to: height - 1, by: 4) {
+            //print(sensedge,gap2,incly)
+          for x in stride(from: 0, to: width - 1, by: 4) {
+                 let pixel = byteBuffer[y * width + x]
+            gap += Int(pixel)
+          }
+            
+            
+        }
+        CVPixelBufferUnlockBaseAddress(self, CVPixelBufferLockFlags(rawValue: 0))
+        return gap
+    }
+}
+
+extension UIImage {
+
+    class func shapeImageWithBezierPath(bezierPath: UIBezierPath, fillColor: UIColor?, strokeColor: UIColor?, strokeWidth: CGFloat = 0.0) -> UIImage! {
+        bezierPath.apply(CGAffineTransform(translationX: -bezierPath.bounds.origin.x + strokeWidth, y: -bezierPath.bounds.origin.y + strokeWidth ) )
+        let size = CGSize(width: bezierPath.bounds.width + strokeWidth*2, height: bezierPath.bounds.height + strokeWidth*2)
+        UIGraphicsBeginImageContext(size)
+        let context = UIGraphicsGetCurrentContext()
+        var image = UIImage()
+        if let context  = context {
+            context.saveGState()
+            context.addPath(bezierPath.cgPath)
+            if strokeColor != nil {
+                strokeColor!.setStroke()
+                context.setLineWidth(strokeWidth)
+            } else { UIColor.clear.setStroke() }
+            fillColor?.setFill()
+            context.drawPath(using: .fillStroke)
+             image = UIGraphicsGetImageFromCurrentImageContext()!
+            context.restoreGState()
+            UIGraphicsEndImageContext()
+        }
+        return image
+    }
+
+}
